@@ -84,12 +84,12 @@ col1, col2 = st.columns(2)
 
 with col1:
     # st.markdown('<div class="upload-container">', unsafe_allow_html=True)
-    base_file = st.file_uploader("📘 Upload Base File", type=["xlsx"])
+    base_file = st.file_uploader("📘 Upload Base Audit File", type=["xlsx"])
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     # st.markdown('<div class="upload-container">', unsafe_allow_html=True)
-    compare_file = st.file_uploader("📗 Upload Comparison File", type=["xlsx"])
+    compare_file = st.file_uploader("📗 Upload Comparison Audit File", type=["xlsx"])
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -139,17 +139,19 @@ def combine_address(row, cols):
     parts = []
 
     for c in cols:
-        # Skip invalid column names
         if not isinstance(c, str):
             continue
 
         v = row.get(c, "")
 
-        # Skip if value is a Series (safety guard)
+        # ✅ FIX: handle duplicate columns properly
         if isinstance(v, pd.Series):
-            continue
+            v = " ".join(
+                str(x).strip()
+                for x in v.tolist()
+                if pd.notna(x) and str(x).strip()
+            )
 
-        # Skip nulls and empty strings
         if pd.isna(v):
             continue
 
@@ -190,13 +192,13 @@ if base_file and compare_file:
         compare_df.columns = compare_df.columns.str.strip().str.lower().str.replace(" ", "")
 
 
-        print("Base Columns:")
-        for c in base_df.columns:
-            print(f" - {c}")
+        # print("Base Columns:")
+        # for c in base_df.columns:
+        #     print(f" - {c}")
 
-        print("Comparison Columns:")
-        for c in compare_df.columns:
-            print(f" - {c}")
+        # print("Comparison Columns:")
+        # for c in compare_df.columns:
+        #     print(f" - {c}")
 
         base_fund = find_column(["fundaccount","accountnumber"], base_df.columns)
         comp_fund = find_column(["fundaccount","accountnumber"], compare_df.columns)
@@ -218,16 +220,16 @@ if base_file and compare_file:
             find_column(["postalcode","zipcode"], compare_df.columns),
         ]
 
-        print(f"Identified Base Fund Account Column: {base_fund}")
-        print(f"Identified Comparison Fund Account Column: {comp_fund}")
+        # print(f"Identified Base Fund Account Column: {base_fund}")
+        # print(f"Identified Comparison Fund Account Column: {comp_fund}")
 
-        print(f"Identified Base Investor Column: {base_inv}")
-        print(f"Identified Comparison Investor Column: {comp_inv}")
+        # print(f"Identified Base Investor Column: {base_inv}")
+        # print(f"Identified Comparison Investor Column: {comp_inv}")
 
-        print(f"Identified Comparison Share Column: {compare_share}")
+        # print(f"Identified Comparison Share Column: {compare_share}")
 
-        print(f"Identified Base Address Columns: {base_addr_cols}")
-        print(f"Identified Comparison Address Columns: {comp_addr_cols}")
+        # print(f"Identified Base Address Columns: {base_addr_cols}")
+        # print(f"Identified Comparison Address Columns: {comp_addr_cols}")
 
         # comp_addr_cols = [c for c in comp_addr_cols if c is not None]
         # base_addr_cols = [c for c in base_addr_cols if c is not None]
@@ -245,9 +247,11 @@ if base_file and compare_file:
 
 
             
+
+
+            
             if isinstance(comp_fa, pd.Series):
                 comp_fa = comp_fa.iloc[0]
-
 
 
             # print(f"Processing Fund Account: {comp_fa}")
@@ -262,10 +266,12 @@ if base_file and compare_file:
             if matched_base.empty:
                 continue
 
+
             for _, base_row in matched_base.iterrows():
                 base_inv_name = base_row.get(base_inv, "")
                 base_addr = base_row.get("address_base", "")
                 score = fuzzy_address(base_addr, comp_addr)
+                
 
                 results.append({
                     "Share": compare_share_val,
