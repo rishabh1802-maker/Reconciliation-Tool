@@ -84,12 +84,12 @@ col1, col2 = st.columns(2)
 
 with col1:
     # st.markdown('<div class="upload-container">', unsafe_allow_html=True)
-    base_file = st.file_uploader("📘 Upload Base Audit File", type=["xlsx"])
+    base_file = st.file_uploader("📘 Upload Base Audit File", type=["xlsx","csv"])
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     # st.markdown('<div class="upload-container">', unsafe_allow_html=True)
-    compare_file = st.file_uploader("📗 Upload Comparison Audit File", type=["xlsx"])
+    compare_file = st.file_uploader("📗 Upload Comparison Audit File", type=["xlsx","csv"])
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -179,14 +179,25 @@ def to_excel(df):
 # ==========================
 # ✅ MAIN LOGIC (unchanged)
 # ==========================
+
+def read_uploaded_file(uploaded_file):
+    if uploaded_file.name.endswith(".csv"):
+        return pd.read_csv(uploaded_file)
+    elif uploaded_file.name.endswith(".xlsx"):
+        return pd.read_excel(uploaded_file)
+    else:
+        st.error("Unsupported file format")
+        st.stop()
+
+
 if base_file and compare_file:
 
     st.success("✅ Files uploaded successfully!")
 
     if st.button("🚀 Run Reconciliation"):
 
-        base_df = pd.read_excel(base_file)
-        compare_df = pd.read_excel(compare_file)
+        base_df = read_uploaded_file(base_file)
+        compare_df = read_uploaded_file(compare_file)
 
         base_df.columns = base_df.columns.str.strip().str.lower().str.replace(" ", "")
         compare_df.columns = compare_df.columns.str.strip().str.lower().str.replace(" ", "")
